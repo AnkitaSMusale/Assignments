@@ -225,6 +225,28 @@ app.post("/employees/:id/leave", async (req, res, next) => {
   res.status(201).json({ message: "leave submitted" });
 });
 
+
+//single query to get employee name & salary, manager name & salary
+app.get('employees/:name',async(req,res,next)=>{
+  const {name}=req.params
+  const employees = await Employee.findAll({
+      where: {
+    $and: [
+      Sequelize.where(
+        Sequelize.fn('concat', Sequelize.col('firstName'), ' ', Sequelize.col('lastName')), {
+          like: '%'+name+'%'
+        }
+      )
+     ]
+    }
+      ,attributes:['first_name','last_name','salary'],
+      include: { model: Employee, as: "manager",attributes:['first_name','last_name','salary'] },
+  });
+  
+  res.status(200).json({employees:employees})
+})
+
+
 Employee.hasMany(Employee, { foreignKey: "manager_id", as: "employees" });
 Employee.belongsTo(Employee, { foreignKey: "manager_id", as: "manager" });
 
