@@ -8,6 +8,7 @@ const sequelize = require("./utils/database");
 const auth = require("./middleware/authenticatrion");
 const User = require("./models/user");
 const Employee = require("./models/employee");
+const Leave = require("./models/leave");
 
 const app = express();
 
@@ -140,6 +141,98 @@ app.delete("/deleteemployees/:id",auth,(req, res) =>{
     })
   
 })
+
+//promote employee form assistant manager to manager
+app.put("/employees/:id/post", async (req, res, next) => {
+  const { id } = req.params;
+  const employee = await Employee.findOne({
+    where: {
+      id: id,
+    },
+  });
+  if (!employee) {
+    res.status(404).json({ message: "Employee not found" });
+  }
+  const updatedempolyee = await employee.update({
+    post: "Manager",
+    manager_id: null,
+  });
+  res.status(200).json({ employee: updatedempolyee });
+});
+
+//update salary of employee
+app.put("/employees/:id/salary", async (req, res, next) => {
+  try {
+    const { salary } = req.body;
+    const { id } = req.params;
+    const employee = await Employee.findOne({
+      where: { id: id },
+    });
+    if (!employee) {
+      res.status(404).json({ message: "Employee not found" });
+    }
+    await employee.update({
+      salary: salary,
+    });
+    res.status(200).json({ employee: employee });
+  } catch (err) {
+    res.status(500).json({ message: "internal server error" });
+  }
+});
+
+//assign manager using manager id
+app.put("/employees/:id/manager", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { manager_id } = req.body;
+    const employee = await Employee.findOne({
+      where: { id: id },
+    });
+    console.log(employee);
+    if (!employee) {
+      res.status(404).json({ message: "Employee not found" });
+    }
+    const updatedEmployee = await employee.update({
+      manager_id: manager_id,
+    });
+    return res.status(200).json({ employee: updatedEmployee });
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+//leave application
+app.post("/employees/:id/leave", async (req, res, next) => {
+  const { id } = req.params;
+  const { date, reason } = req.body;
+  const employee = await this.Employee.findOne({
+    where: {
+      id: id,
+    },
+  });
+  if (!employee) {
+    return res.status(404).json({ message: "Employee not found" });
+  }
+  if (isNaN(Date.parse(date))) {
+    return res.status(400).status({ message: "date should be a valid date" });
+  }
+  const leave = await Leave.create({
+    date: date,
+    reason: reason,
+    employeeid: id,
+  });
+
+  res.status(201).json({ message: "leave submitted" });
+});
+
+Employee.hasMany(Employee, { foreignKey: "manager_id", as: "employees" });
+Employee.belongsTo(Employee, { foreignKey: "manager_id", as: "manager" });
+
+Employee.hasMany(Leave);
+Leave.belongsTo(Employee);
+
+User.hasMany(Employee);
+Employee.belongsTo(User);
 
 sequelize
   .sync()
