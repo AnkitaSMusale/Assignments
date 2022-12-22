@@ -127,6 +127,19 @@ app.post("/employees", async (req, res, next) => {
   }
 });
 
+//remove employee with authentication
+app.delete("/deleteemployees/:id",auth,(req, res) =>{
+  const empid = req.params.id;
+  console.log(id);
+  Employee.destroy({where: { id: empid }})
+    .then(() => {
+        return res.status(204).json({ success: true, message: "Deleted Successfuly"})
+    }).catch(err => {
+        console.log(err);
+        return res.status(403).json({ success: true, message: "Failed"})
+    })
+  
+})
 
 sequelize
   .sync()
