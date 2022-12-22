@@ -7,6 +7,7 @@ const Sequelize = require("sequelize");
 const sequelize = require("./utils/database");
 const auth = require("./middleware/authenticatrion");
 const User = require("./models/user");
+const Employee = require("./models/employee");
 
 const app = express();
 
@@ -92,6 +93,37 @@ app.post("/login", async (req, res) => {
     res.status(400).send("Invalid Credentials");
   } catch (err) {
     console.log(err);
+  }
+});
+
+
+//get list of all employees
+app.get("/employees", async (req, res, next) => {
+  const employees = await Employee.findAll();
+  res.json({ employees: employees });
+});
+
+//get employees profile
+app.get("/employees/:id", async (req, res, next) => {
+  const employee = await Employee.findOne({ where: { id: req.params.id } });
+  if (!employee) {
+    return res.json({ message: "employee not found" });
+  }
+  return res.json({ employee: employee });
+});
+
+// add employee
+app.post("/employees", async (req, res, next) => {
+  try {
+    const data = req.body;
+    const employee = await Employee.create({
+      ...data,
+      post: "Assistant manager",
+      salary: 50000,
+    });
+    return res.status(201).json({ employee: employee });
+  } catch (err) {
+    res.status(500).json({ message: "internal server error" });
   }
 });
 
